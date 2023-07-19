@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CategoryName {
+  CONTENT_CREATOR
+  TOKEN_CREATOR
+  CALLER
+  INFLUENCER
+}
+
+model Article {
+  id          Int       @id @default(autoincrement())
+  title       String    @unique
+  description String?
+  body        String
+  published   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  author      User?     @relation(fields: [authorId], references: [id])
+  authorId    Int?
+  comment     Comment[]
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  address    String    @unique
+  username   String
+  role       Role[]
+  followers  Follows[] @relation("follower")
+  following  Follows[] @relation("following")
+  createdAt  DateTime  @default(now())
+  articles   Article[]
+  comments   Comment[]
+  
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  article   Article  @relation(fields: [articleId], references: [id])
+  articleId Int
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  Int?
+}
+
+model Follows {
+  following        User   @relation("following", fields: [followingAddress], references: [address])
+  followingAddress String
+  follower         User   @relation("follower", fields: [followerAddress], references: [address])
+  followerAddress  String
+
+  @@id([followerAddress, followingAddress])
+}
+
+model Category {
+  id     Int    @id @default(autoincrement())
+  name   CategoryName @unique
+  users  User[]
+}
